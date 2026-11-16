@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>周遊謎モック</title>
+<style>
+:root{--bg:#f5f3ee;--ink:#222;--accent:#c0392b;--card:#fff;--done:#bbb;--bar:#1f2a44}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP",sans-serif;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+main{max-width:520px;margin:0 auto;padding:16px}
+.logo{display:flex;align-items:center;justify-content:center;height:140px;border:3px solid var(--ink);border-radius:12px;background:var(--card);font-size:28px;font-weight:800;letter-spacing:.1em;margin:8px 0 20px}
+.prologue{background:var(--card);border-radius:12px;padding:16px;line-height:1.9;font-size:15px;white-space:pre-wrap}
+h2{font-size:16px;margin:24px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+#progress{font-size:14px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.grid button{aspect-ratio:1;border:2px solid var(--ink);border-radius:8px;background:var(--card);font-size:18px;font-weight:700;color:var(--ink);position:relative;padding:0}
+.grid button.solved{background:var(--done);border-color:#999;color:#666}
+.grid button.solved::after{content:"済";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;background:rgba(0,0,0,.25);border-radius:6px}
+.answerbar{position:fixed;left:0;right:0;bottom:0;background:var(--bar);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center}
+.answerbar input{flex:1;max-width:380px;font-size:16px;padding:12px;border-radius:8px;border:none}
+.answerbar button{font-size:16px;font-weight:700;padding:0 18px;border:none;border-radius:8px;background:var(--accent);color:#fff}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.modal.open{display:flex}
+.box{background:var(--card);border-radius:14px;width:100%;max-width:420px;padding:20px 16px 16px;position:relative;text-align:center}
+.close{position:absolute;top:6px;right:8px;border:none;background:none;font-size:28px;line-height:1;color:#555;padding:4px 8px}
+.box h3{margin:4px 28px 12px;font-size:20px}
+.box img{width:100%;border-radius:8px;display:block}
+.badge{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:2px 12px;font-size:13px;margin-bottom:6px}
+.ans{margin-top:10px;font-size:15px}
+.msg{font-size:20px;font-weight:800;margin:12px 0 4px}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo" id="logo">タイトルロゴ</div>
+  <div class="prologue" id="prologue"></div>
+  <h2>事件ファイル <span id="progress"></span></h2>
+  <div class="grid" id="grid"></div>
+</main>
+
+<form class="answerbar" id="form" autocomplete="off">
+  <input id="answer" type="text" placeholder="解答を入力" enterkeyhint="send">
+  <button type="submit">送信</button>
+</form>
+
+<div class="modal" id="modal"><div class="box"><button class="close" id="close" aria-label="閉じる">×</button><div id="content"></div></div></div>
+
+<script>
+/* ===== 差し替えはここだけ ===== */
+const TITLE = "タイトルロゴ";
+const PROLOGUE = "ここにプロローグのストーリーが入ります。\n施設のあちこちで、30の奇妙な事件が起きている――。\n写真を手がかりに現場へ向かい、謎を解いて事件を解決しよう。";
+// title: 事件名 / img: 画像のパス（空ならダミー画像）/ answers: 先頭が正式な答え、2つ目以降は別解
+const CASES = Array.from({length:30},(_,i)=>({
+  title: `ダミー${i+1}事件`,
+  img: "",
+  answers: [`こたえ${i+1}`]
+}));
+// 例: CASES[0] = {title:"消えた時計事件", img:"img/01.jpg", answers:["とけい","時計","トケイ"]};
+/* ============================ */
+
+const KEY = "shuyu-nazo-solved";
+let solved = new Set();
+try { solved = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch(e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...solved])); } catch(e) {} };
+
+const pad = n => String(n).padStart(2,"0");
+const norm = s => s.normalize("NFKC").toLowerCase()
+  .replace(/[\s　]/g,"")
+  .replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0)-0x60));
+
+const dummyImg = n => "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#d9d4c7"/><text x="200" y="140" font-size="28" text-anchor="middle" fill="#666" font-family="sans-serif">設置場所の写真</text><text x="200" y="185" font-size="40" font-weight="bold" text-anchor="middle" fill="#666" font-family="sans-serif">${pad(n)}</text></svg>`);
+
+document.getElementById("logo").textContent = TITLE;
+document.getElementById("prologue").textContent = PROLOGUE;
+
+const grid = document.getElementById("grid");
+CASES.forEach((c,i)=>{
+  const b = document.createElement("button");
+  b.textContent = pad(i+1);
+  b.onclick = () => showCase(i);
+  grid.appendChild(b);
+});
+
+function render(){
+  [...grid.children].forEach((b,i)=>b.classList.toggle("solved", solved.has(i)));
+  document.getElementById("progress").textContent = `解決 ${solved.size}／${CASES.length}`;
+}
+
+const modal = document.getElementById("modal"), content = document.getElementById("content");
+function open(html){ content.innerHTML = html; modal.classList.add("open"); }
+document.getElementById("close").onclick = () => modal.classList.remove("open");
+modal.onclick = e => { if (e.target === modal) modal.classList.remove("open"); };
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function showCase(i){
+  const c = CASES[i], done = solved.has(i);
+  open(`${done?'<div class="badge">解決済み</div>':''}
+    <h3>${pad(i+1)}.${esc(c.title)}</h3>
+    <img src="${c.img || dummyImg(i+1)}" alt="">
+    ${done?`<div class="ans">答え：<b>${esc(c.answers[0])}</b></div>`:''}`);
+}
+
+document.getElementById("form").onsubmit = e => {
+  e.preventDefault();
+  const input = document.getElementById("answer");
+  const v = norm(input.value);
+  if (!v) return;
+  const i = CASES.findIndex(c => c.answers.some(a => norm(a) === v));
+  if (i < 0) {
+    open(`<div class="msg">ちがうようだ…</div><p>もう一度考えてみよう。</p>`);
+  } else if (solved.has(i)) {
+    open(`<div class="msg">この事件はすでに解決済み</div><p>${pad(i+1)}.${esc(CASES[i].title)}</p>`);
+  } else {
+    solved.add(i); save(); render();
+    open(`<div class="msg">${pad(i+1)}.${esc(CASES[i].title)} 解決！</div>`);
+  }
+  input.value = ""; input.blur();
+};
+
+render();
+</script>
+</body>
+</html>
