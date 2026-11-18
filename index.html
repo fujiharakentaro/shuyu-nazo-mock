@@ -105,9 +105,11 @@ const TITLES = [
   "お菓子の村襲撃事件","人物特定事件","表彰台争奪事件","数字潜伏事件","電光数字事件",
   "指先暗号事件","宇宙ゼミ襲来事件","屋敷迷子事件","虫かご大脱走事件","謎のグラデーション事件"
 ];
+// 設置場所の写真（img フォルダに置いて番号順に指定。空文字ならダミー画像）
+const IMAGES = ["img/01.jpg"];
 const CASES = ANSWERS.map((answers,i)=>({
   title: TITLES[i],
-  img: "",
+  img: IMAGES[i] || "",
   answers
 }));
 // 例: CASES[0] = {title:"消えた時計事件", img:"img/01.jpg", answers:["とけい","時計","トケイ"]};
