@@ -11,6 +11,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans",
 main{max-width:520px;margin:0 auto;padding:16px}
 .logo{display:flex;align-items:center;justify-content:center;height:140px;border:3px solid var(--ink);border-radius:12px;background:var(--card);font-size:28px;font-weight:800;letter-spacing:.1em;margin:8px 0 20px}
 .prologue{background:var(--card);border-radius:12px;padding:16px;line-height:1.9;font-size:15px;white-space:pre-wrap}
+.howto{background:var(--card);border-radius:12px;padding:14px 16px;margin-top:16px;border:2px solid var(--accent)}
+.howto .howto-title{margin:0 0 10px;justify-content:center;color:var(--accent)}
+.howto ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.howto li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.6}
+.howto .step{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
 h2{font-size:16px;margin:24px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
 #progress{font-size:14px;color:var(--accent)}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -35,6 +40,14 @@ h2{font-size:16px;margin:24px 0 8px;display:flex;justify-content:space-between;a
 <main>
   <div class="logo" id="logo">タイトルロゴ</div>
   <div class="prologue" id="prologue"></div>
+  <section class="howto">
+    <h2 class="howto-title">あそびかた</h2>
+    <ol>
+      <li><span class="step">1</span><div><b>館内に30の謎が隠れている！</b><br>あちこちに謎のパネルが設置されています。</div></li>
+      <li><span class="step">2</span><div><b>番号ボタンをタップして場所をチェック</b><br>写真で謎がある場所がわかります。</div></li>
+      <li><span class="step">3</span><div><b>答えがわかったら画面下の解答欄へ</b><br>正解すると事件解決！ボタンに「済」がつきます。</div></li>
+    </ol>
+  </section>
   <h2>事件ファイル <span id="progress"></span></h2>
   <div class="grid" id="grid"></div>
 </main>
